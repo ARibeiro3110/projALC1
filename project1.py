@@ -6,16 +6,15 @@ import sys
 from pysat.examples.rc2 import RC2
 from pysat.formula import WCNF
 from pysat.card import CardEnc, EncType
-# TODO: improve separation comments
 
-
+##### GLOBAL VARIABLES #####
 wcnf = WCNF()
-
 airport_to_city = {}            # key: airport, value: city
 cities_to_visit = []            # list of tuples (airport, k)
 flights = []                    # list of Flights (attributes: date, origin, destination, departure, arrival, cost)
 flights_with_origin = {}        # key: airport, value: flights[]
 flights_with_destination = {}   # key: airport, value: flights[]
+##### end: GLOBAL VARIABLES #####
 
 
 ##### CLASSES #####
@@ -49,9 +48,9 @@ class Flight:
         return f"{self.date} {airport_to_city[self.origin]} {airport_to_city[self.destination]} {self.departure} {self.cost}"
 ##### end: CLASSES #####
 
+
 ##### READ FROM STDIN #####
-input_stream = sys.stdin.read()
-lines = input_stream.strip().split("\n")
+lines = sys.stdin.read().strip().split("\n")
 n = int(lines[0])
 ##### end: READ FROM STDIN #####
 
@@ -89,7 +88,7 @@ for i in range(n_flights):
 ##### end: HANDLE FLIGHTS #####
 
 
-##### FOR EACH CITY, ARRIVAL AND DEPARTURE k NIGHTS APART #####
+##### FOR EACH CITY, ARRIVAL AND DEPARTURE ARE k NIGHTS APART #####
 for airport, k in cities_to_visit + [(base, K)]:
     if airport != base:
         arrivals = flights_with_destination[airport]
@@ -115,7 +114,8 @@ for airport, k in cities_to_visit + [(base, K)]:
         compatible_arrivals = [f_arrival.var for f_arrival in arrivals
                                if f_arrival.date.nightsBetween(f_departure.date) == k]
         wcnf.append([-f_departure.var] + compatible_arrivals)
-##### end: FOR EACH CITY, ARRIVAL AND DEPARTURE k NIGHTS APART #####
+##### end: FOR EACH CITY, ARRIVAL AND DEPARTURE ARE k NIGHTS APART #####
+
 
 ##### SOLVING #####
 solver = RC2(wcnf)
