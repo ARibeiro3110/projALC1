@@ -121,13 +121,11 @@ for airport, k in cities_to_visit + [(base, K)]:
 
     enc = CardEnc.equals(lits=arrival_vars, bound=1, top_id=num_vars, encoding=EncType.pairwise)
     num_vars = enc.nv
-    # print(f"125: {num_vars}", file=sys.stderr)
     for clause in enc.clauses:
         wcnf.append(clause)
 
-    enc = CardEnc.equals(lits=departure_vars, bound=1, top_id=num_vars, encoding=EncType.bitwise)
+    enc = CardEnc.equals(lits=departure_vars, bound=1, top_id=num_vars, encoding=EncType.cardnetwrk)
     num_vars = enc.nv
-    # print(f"131: {num_vars}", file=sys.stderr)
     for clause in enc.clauses:
         wcnf.append(clause)
 
