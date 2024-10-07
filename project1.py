@@ -74,10 +74,10 @@ for i in range(2, n+1):
 
 
 ##### HANDLE FLIGHTS #####
-n_flights = int(lines[n+1])
-flight_lines = [line.split() for line in lines[n+2: n+2 + n_flights]]
+m = int(lines[n+1])
+flight_lines = [line.split() for line in lines[n+2: n+2 + m]]
 
-for i in range(n_flights):
+for i in range(m):
     flight = Flight(*flight_lines[i], i+1)
     flights.append(flight)
     flights_with_origin[flight.origin].append(flight)
