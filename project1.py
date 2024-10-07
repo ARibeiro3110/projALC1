@@ -6,17 +6,17 @@ import sys
 from pysat.examples.rc2 import RC2
 from pysat.formula import WCNF
 from pysat.card import CardEnc, EncType
+# TODO: improve separation comments
 
-# import os
-# sys.stderr = open(os.devnull, 'w')  # Suppress debug output
 
 wcnf = WCNF()
 
-airport_to_city = {}
-cities_to_visit = []
-flights = []
-flights_with_origin = {}
-flights_with_destination = {}
+airport_to_city = {}            # key: airport, value: city
+cities_to_visit = []            # list of tuples (airport, k)
+flights = []                    # list of Flights (attributes: date, origin, destination, departure, arrival, cost)
+flights_with_origin = {}        # key: airport, value: flights[]
+flights_with_destination = {}   # key: airport, value: flights[]
+
 
 ##### CLASSES #####
 class Date:
@@ -28,10 +28,10 @@ class Date:
 
     def __str__(self):
         return f"{self.day:02}/{self.month:02}"
-    
+
     def isBefore(self, dt):
         return self.month < dt.month or (self.month == dt.month and self.day < dt.day)
-    
+
     def nightsBetween(self, dt):
         if not self.isBefore(dt):
             return -1
@@ -40,7 +40,7 @@ class Date:
         elif self.month + 1 == dt.month:
             return Date.days_in_month[self.month - 1] - self.day + dt.day
         else:
-            return -1  # Adjusted to return -1 for unsupported cases
+            return -1
 
 
 class Flight:
@@ -49,7 +49,7 @@ class Flight:
         self.origin = origin
         self.destination = destination
         self.departure = departure
-        self.arrival = arrival
+        # self.arrival = arrival
         self.cost = int(cost)
         self.var = int(var)
 
@@ -62,6 +62,7 @@ input_stream = sys.stdin.read()
 lines = input_stream.strip().split("\n")
 n = int(lines[0])
 ##### end: READ FROM STDIN #####
+
 
 ##### HANDLE CITIES #####
 city, airport = lines[1].split()
@@ -80,6 +81,7 @@ for i in range(2, n+1):
     K += int(k)
 ##### end: HANDLE CITIES #####
 
+
 ##### HANDLE FLIGHTS #####
 n_flights = int(lines[n+1])
 num_vars = n_flights
@@ -92,9 +94,18 @@ for i in range(n_flights):
     flights_with_origin[flight.origin].append(flight)
     flights_with_destination[flight.destination].append(flight)
 
-    # Soft clauses for minimizing cost
+    # Soft clauses for all flights to minimize cost
     wcnf.append([-flight.var], weight=flight.cost)
 ##### end: HANDLE FLIGHTS #####
+
+
+##### TOTAL n FLIGHTS ##### # FIXME: needed?
+# enc = CardEnc.equals(lits=[i for i in range(1, n_flights+1)], bound=n, top_id=num_vars, encoding=EncType.seqcounter)
+# num_vars = enc.nv # FIXME: is this correct?
+# for clause in enc.clauses:
+#     wcnf.append(clause)
+##### end: TOTAL n FLIGHTS #####
+
 
 ##### FOR EACH CITY, ARRIVAL AND DEPARTURE k NIGHTS APART #####
 for airport, k in cities_to_visit + [(base, K)]:
@@ -108,33 +119,32 @@ for airport, k in cities_to_visit + [(base, K)]:
     arrival_vars = [f.var for f in arrivals]
     departure_vars = [f.var for f in departures]
 
-    # Exactly one arrival flight
-    if len(arrival_vars) > 0:
-        enc = CardEnc.equals(lits=arrival_vars, bound=1, top_id=num_vars, encoding=EncType.seqcounter)
-        num_vars = enc.nv
-        for clause in enc.clauses:
-            wcnf.append(clause)
+    enc = CardEnc.equals(lits=arrival_vars, bound=1, top_id=num_vars, encoding=EncType.cardnetwrk)
+    num_vars = enc.nv
+    # print(f"125: {num_vars}", file=sys.stderr)
+    for clause in enc.clauses:
+        wcnf.append(clause)
 
-    # Exactly one departure flight
-    if len(departure_vars) > 0:
-        enc = CardEnc.equals(lits=departure_vars, bound=1, top_id=num_vars, encoding=EncType.seqcounter)
-        num_vars = enc.nv
-        for clause in enc.clauses:
-            wcnf.append(clause)
+    enc = CardEnc.equals(lits=departure_vars, bound=1, top_id=num_vars, encoding=EncType.cardnetwrk)
+    num_vars = enc.nv
+    # print(f"131: {num_vars}", file=sys.stderr)
+    for clause in enc.clauses:
+        wcnf.append(clause)
 
-    # Prevent invalid arrival and departure combinations
     for f_arrival in arrivals:
         for f_departure in departures:
             if f_arrival.date.nightsBetween(f_departure.date) != k:
                 wcnf.append([-f_arrival.var, -f_departure.var])
 ##### end: FOR EACH CITY, ARRIVAL AND DEPARTURE k NIGHTS APART #####
 
+
 ##### SOLVING #####
 solver = RC2(wcnf)
 solution = solver.compute()
 
-selected_flights = [i for i in range(len(flights)) if solution[i] > 0]
-print(sum(flights[i].cost for i in selected_flights))
-for i in selected_flights:
-    print(flights[i])
+if solution:
+    selected_flights = [i for i in range(len(flights)) if solution[i] > 0]
+    print(sum(flights[i].cost for i in selected_flights))
+    for i in selected_flights:
+        print(flights[i])
 ##### end: SOLVING #####
