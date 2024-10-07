@@ -29,19 +29,11 @@ class Date:
     def __str__(self):
         return f"{self.day:02}/{self.month:02}"
 
-    def isBefore(self, dt):
-        return self.month < dt.month or (self.month == dt.month and self.day < dt.day)
+    def toOrdinal(self):
+        return sum(Date.days_in_month[:self.month - 1]) + self.day
 
     def nightsBetween(self, dt):
-        if not self.isBefore(dt):
-            return -1
-        elif self.month == dt.month:
-            return dt.day - self.day
-        elif self.month + 1 == dt.month:
-            return Date.days_in_month[self.month - 1] - self.day + dt.day
-        else:
-            return -1
-
+        return dt.toOrdinal() - self.toOrdinal()
 
 class Flight:
     def __init__(self, date, origin, destination, departure, arrival, cost, var):
@@ -84,8 +76,6 @@ for i in range(2, n+1):
 
 ##### HANDLE FLIGHTS #####
 n_flights = int(lines[n+1])
-num_vars = n_flights
-
 flight_lines = [line.split() for line in lines[n+2: n+2 + n_flights]]
 
 for i in range(n_flights):
@@ -99,14 +89,6 @@ for i in range(n_flights):
 ##### end: HANDLE FLIGHTS #####
 
 
-##### TOTAL n FLIGHTS ##### # FIXME: needed?
-# enc = CardEnc.equals(lits=[i for i in range(1, n_flights+1)], bound=n, top_id=num_vars, encoding=EncType.seqcounter)
-# num_vars = enc.nv # FIXME: is this correct?
-# for clause in enc.clauses:
-#     wcnf.append(clause)
-##### end: TOTAL n FLIGHTS #####
-
-
 ##### FOR EACH CITY, ARRIVAL AND DEPARTURE k NIGHTS APART #####
 for airport, k in cities_to_visit + [(base, K)]:
     if airport != base:
@@ -117,32 +99,34 @@ for airport, k in cities_to_visit + [(base, K)]:
         departures = flights_with_destination[airport]
 
     arrival_vars = [f.var for f in arrivals]
+    enc = CardEnc.equals(lits=arrival_vars, bound=1, encoding=EncType.pairwise)
+    wcnf.extend(enc.clauses)
+
     departure_vars = [f.var for f in departures]
-
-    enc = CardEnc.equals(lits=arrival_vars, bound=1, top_id=num_vars, encoding=EncType.pairwise)
-    num_vars = enc.nv
-    for clause in enc.clauses:
-        wcnf.append(clause)
-
-    enc = CardEnc.equals(lits=departure_vars, bound=1, top_id=num_vars, encoding=EncType.cardnetwrk)
-    num_vars = enc.nv
-    for clause in enc.clauses:
-        wcnf.append(clause)
+    enc = CardEnc.equals(lits=departure_vars, bound=1, encoding=EncType.pairwise)
+    wcnf.extend(enc.clauses)
 
     for f_arrival in arrivals:
-        for f_departure in departures:
-            if f_arrival.date.nightsBetween(f_departure.date) != k:
-                wcnf.append([-f_arrival.var, -f_departure.var])
-##### end: FOR EACH CITY, ARRIVAL AND DEPARTURE k NIGHTS APART #####
+        compatible_departures = [f_departure.var for f_departure in departures
+                                 if f_arrival.date.nightsBetween(f_departure.date) == k]
+        wcnf.append([-f_arrival.var] + compatible_departures)
 
+    for f_departure in departures:
+        compatible_arrivals = [f_arrival.var for f_arrival in arrivals
+                               if f_arrival.date.nightsBetween(f_departure.date) == k]
+        wcnf.append([-f_departure.var] + compatible_arrivals)
+##### end: FOR EACH CITY, ARRIVAL AND DEPARTURE k NIGHTS APART #####
 
 ##### SOLVING #####
 solver = RC2(wcnf)
 solution = solver.compute()
 
 if solution:
-    selected_flights = [i for i in range(len(flights)) if solution[i] > 0]
-    print(sum(flights[i].cost for i in selected_flights))
-    for i in selected_flights:
-        print(flights[i])
+    selected_vars = set(var for var in solution if var > 0)
+    selected_flights = [f for f in flights if f.var in selected_vars]
+    total_cost = sum(f.cost for f in selected_flights)
+
+    print(total_cost)
+    for f in selected_flights:
+        print(f)
 ##### end: SOLVING #####
