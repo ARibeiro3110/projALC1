@@ -8,4 +8,6 @@
 !public-test/*.in
 !public-test/*.out
 !public-test/Makefile
-
+!report/
+!report/*.tex
+!report/*.pdf

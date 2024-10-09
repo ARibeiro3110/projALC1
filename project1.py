@@ -109,11 +109,6 @@ for airport, k in cities_to_visit + [(base, K)]:
         compatible_departures = [f_departure.var for f_departure in departures
                                  if f_arrival.date.nightsBetween(f_departure.date) == k]
         wcnf.append([-f_arrival.var] + compatible_departures)
-
-    # for f_departure in departures:
-    #     compatible_arrivals = [f_arrival.var for f_arrival in arrivals
-    #                            if f_arrival.date.nightsBetween(f_departure.date) == k]
-    #     wcnf.append([-f_departure.var] + compatible_arrivals)
 ##### end: FOR EACH CITY, ARRIVAL AND DEPARTURE ARE k NIGHTS APART #####
 
 
