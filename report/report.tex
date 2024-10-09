@@ -7,13 +7,16 @@
 \usepackage{svg}
 \usepackage{hyperref}
 \usepackage{enumitem}
+\usepackage[absolute,overlay]{textpos}
+\usepackage{lipsum}
 
 \newcommand{\reporttitle}{Projeto 1 -- Flying Tourist Problem}
 \newcommand{\authorname}{Afonso da Conceição Ribeiro}
-\newcommand{\authorgroup}{20}
 \newcommand{\authorid}{ist1102763}
+\newcommand{\authorgroup}{20}
 \newcommand{\reportauthor}{\textbf{\authorname} (\authorid) -- Grupo \textbf{\authorgroup}}
-\newcommand{\reportsubject}{Algoritmos para Lógica Computacional}
+\newcommand{\istul}{Instituto Superior Técnico -- Universidade de Lisboa}
+\newcommand{\reportcourse}{Algoritmos para Lógica Computacional}
 \newcommand{\reportyear}{2024/2025}
 
 \hypersetup{
@@ -29,7 +32,7 @@
 \pagestyle{fancy}
 \fancyhf{}
 \lhead{\reporttitle}
-\rhead{\reportsubject}
+\rhead{\reportcourse}
 \lfoot{\reportauthor}
 \rfoot{\thepage}
 
@@ -42,12 +45,17 @@
 
 \begin{document}
     \begin{titlepage}
+
+        \begin{textblock*}{0cm}(10cm, 0cm)
+            \includegraphics[width=10cm]{Logo IST.jpg}
+        \end{textblock*}
+
         \centering
         \vspace*{5cm}
         {\Huge \textbf{\reporttitle} \par}
 
         \vspace{0.5cm}
-        {\LARGE \reportsubject \par}
+        {\LARGE \reportcourse \par}
 
         \vspace{0.5cm}
         {\large \reportyear \par}
@@ -55,13 +63,16 @@
         \vspace{2cm}
         {\large \reportauthor \par}
         
+        \vspace{0.25cm}
+        {\large \istul \par}
+
         \vfill
         \renewcommand{\contentsname}{Índice}
         \tableofcontents
 
         \thispagestyle{empty}
         \clearpage
-        
+
     \end{titlepage}
 
 
@@ -70,7 +81,7 @@
 
 
     \section{Problema a resolver}
-        O Flying Tourist Problem é um problema de otimização em que um turista precisa de planear uma viagem por várias cidades, minimizando o custo dos bilhetes de avião. Este inicia e termina a viagem na mesma cidade, e passa em cada cidade um número fixo de noites. A ordem das cidades a visitar não é predefinida, e o turista é obrigado a utilizar apenas voos diretos. O problema é modelado como um problema de otimização de Maximum Satisfiability (MaxSAT) e resolvido utilizando solvers correspondentes.
+        O Flying Tourist Problem é um problema de otimização em que um turista precisa de planear uma viagem por várias cidades, minimizando o custo dos bilhetes de avião. Este inicia e termina a viagem na mesma cidade, e passa em cada cidade um número fixo de noites. A ordem das cidades a visitar não é predefinida, e o turista é obrigado a utilizar apenas voos diretos. O problema é modelado como um problema de otimização de Maximum Satisfiability (MaxSAT) e resolvido utilizando um solver correspondente.
 
     \section{Como instalar e correr o projeto}
         \begin{itemize}
@@ -174,17 +185,17 @@
             \right)
             \label{K_nights_base}
         \end{equation}
-        
+
         \vspace{\baselineskip}
         \vspace{\baselineskip}
         \vspace{\baselineskip}
         \noindent Desta forma, fica definida a fórmula MaxSAT que codifica o problema: $\varphi = \varphi_S \land \varphi_H$.
-            
+
     \section{Algoritmo e configurações usadas}
         A fórmula MaxSAT que codifica o problema é uma instância da classe \texttt{WCNF}, da biblioteca \texttt{PySAT}, que permite manipular fórmulas CNF com soft clauses e hard clauses, e é construída utilizando os métodos \texttt{append} ou \texttt{extend} para adicionar uma cláusula ou um conjunto de cláusulas, respetivamente.
-        
+
         O algoritmo utilizado é o \texttt{RC2}, da biblioteca \texttt{PySAT}, cuja instância é criada recebendo no seu construtor a fórmula \texttt{WCNF}. O seu método \texttt{compute} calcula a solução ótima e devolve uma lista das variáveis que constam na fórmula, positivas caso lhes tenha sido atribuído o valor \texttt{True} e negativas caso contrário. Para tal, o \texttt{RC2} pode usar qualquer SAT solver disponível no \texttt{PySAT}, usando, neste caso, por defeito, o \texttt{g3}.
-        
+
         De seguida, encontram-se as variáveis positivas da solução, que correspondem aos voos escolhidos, e calcula-se a soma dos custos desses voos. Finalmente, imprimem-se o valor total e os voos escolhidos para o \texttt{stdout}, no formato requerido.
 
 
@@ -202,7 +213,7 @@
         \begin{equation}
             \sum_{i=1}^{n} x_i \geq 1 \quad \equiv \quad \left( x_1 \lor \dots \lor x_n \right)
         \end{equation}
-        A restrição AtMost1, utilizando a codificação pairwise, garante que, no máximo, uma das variáveis seja atribuída como \texttt{True}. Esta codificação cria $^nC_2$ cláusulas, uma para cada par de variáveis distintas, sendo que o significado de cada cláusula é que, para um par de variáveis, pelo menos uma delas deve ser falsa. Se fossem atribuídos valores \texttt{True} a duas variáveis diferentes, haveria uma cláusula contendo ambas como verdadeiras, o que violaria a restrição. Portanto, a codificação pairwise garante que apenas uma variável será verdadeira.
+        A restrição AtMost1 garante que, no máximo, uma das variáveis é atribuída a \texttt{True}. Utilizando a codificação pairwise, criam-se $^nC_2$ cláusulas, uma para cada par de variáveis distintas, sendo que o significado de cada cláusula é que, para um par de variáveis, pelo menos uma delas deve ser falsa. Se fossem atribuídos valores \texttt{True} a duas variáveis diferentes, haveria uma cláusula contendo ambas como verdadeiras, o que violaria a restrição. Portanto, a codificação pairwise garante que apenas uma variável será verdadeira.
         \begin{equation}
             \sum_{i=1}^{n} x_i \leq 1 \quad \equiv \quad \bigwedge_{1 \leq i < j \leq n} \left( \neg x_i \lor \neg x_j \right)
         \end{equation}

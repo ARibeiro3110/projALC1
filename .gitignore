@@ -10,4 +10,5 @@
 !public-test/Makefile
 !report/
 !report/*.tex
+!report/*.jpg
 !report/*.pdf
